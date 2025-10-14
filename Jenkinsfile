@@ -41,11 +41,9 @@ pipeline {
         stage('Upload to JFrog Artifactory') {
             steps {
                 script {
-                    // Artifactory server connection
                     def server = Artifactory.server(SERVER_ID)
                     def buildInfo = Artifactory.newBuildInfo()
 
-                    // Upload JAR
                     server.upload(
                         spec: """{
                             "files": [
@@ -58,34 +56,57 @@ pipeline {
                         buildInfo: buildInfo
                     )
 
-                    // Publish build info
                     server.publishBuildInfo(buildInfo)
                 }
             }
         }
 
         stage('Build & Push Docker Image to ECR') {
-           steps {
-            script {
-            def imageTag = "${ECR_REPO}:${BUILD_NUMBER}"
+            steps {
+                script {
+                    def imageTag = "${ECR_REPO}:${BUILD_NUMBER}"
 
-            // Copy JAR from master to agent workspace
-            copyArtifacts(projectName: 'java-spc', selector: lastSuccessful())
+                    // Login to AWS ECR
+                    sh """
+                        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO
+                    """
 
-            // Login to AWS ECR
-            sh """
-                aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO
-            """
+                    // Build Docker image (the JAR is already in target folder from mvn package)
+                    sh "docker build -t ${imageTag} ."
 
-            // Build Docker image on agent
-            sh "docker build -t ${imageTag} ."
-
-            // Push Docker image to ECR
-            sh "docker push ${imageTag}"
+                    // Push Docker image to ECR
+                    sh "docker push ${imageTag}"
+                }
+            }
         }
-    }
-}
 
+        stage('Install Trivy & Scan Image') {
+            steps {
+                script {
+                    echo "Installing Trivy..."
+                    sh """
+                        if ! command -v trivy &> /dev/null
+                        then
+                          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+                          sudo mv trivy /usr/local/bin/
+                        fi
+                        trivy --version
+                    """
+
+                    echo "Running Trivy scan..."
+                    sh """
+                        trivy image --format template --template "@contrib/junit.tpl" \
+                        -o trivy-report.xml ${ECR_REPO}:${BUILD_NUMBER}
+                    """
+                }
+            }
+            post {
+                always {
+                    junit 'trivy-report.xml'
+                    archiveArtifacts artifacts: 'trivy-report.xml'
+                }
+            }
+        }
     }
 
     post {
