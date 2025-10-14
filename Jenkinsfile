@@ -65,7 +65,10 @@ pipeline {
         }
 
         stage('Build & Push Docker Image to ECR') {
+            agent { label 'pipe' }
     steps {
+        checkout scm
+        sh 'ls -l'
         script {
             def buildNumber = env.BUILD_NUMBER
             def artifactUrl = "${ARTIFACTORY_URL}/${buildNumber}/spring-petclinic-4.0.0-SNAPSHOT.jar"
