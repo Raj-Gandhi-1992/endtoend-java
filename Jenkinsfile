@@ -18,7 +18,9 @@ pipeline {
 
         stage('GIT CHECKOUT') {
             steps {
-                git url: 'https://github.com/spring-projects/spring-petclinic.git', branch: 'main'
+                // ✅ Ensures the repo is checked out in the same workspace on the agent
+                checkout([$class: 'GitSCM', branches: [[name: '*/main']], 
+                    userRemoteConfigs: [[url: 'https://github.com/spring-projects/spring-petclinic.git']]])
             }
         }
 
@@ -66,12 +68,15 @@ pipeline {
                 script {
                     def imageTag = "${ECR_REPO}:${BUILD_NUMBER}"
 
+                    // ✅ Debug: confirm Dockerfile is in workspace
+                    sh "echo '--- Checking for Dockerfile ---' && pwd && ls -al"
+
                     // Login to AWS ECR
                     sh """
                         aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO
                     """
 
-                    // Build Docker image (the JAR is already in target folder from mvn package)
+                    // Build Docker image
                     sh "docker build -t ${imageTag} ."
 
                     // Push Docker image to ECR
