@@ -81,20 +81,31 @@ pipeline {
         }
 
         stage('Build & Push Docker Image to ECR') {
-            steps {
-                script {
-                    def imageTag = "${ECR_REPO}:${BUILD_NUMBER}"
+    steps {
+        script {
+            def imageTag = "${ECR_REPO}:${BUILD_NUMBER}"
 
-                    // ✅ Debugging already added above, so just build here
-                    sh """
-                        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO
-                    """
+            // AWS ECR login
+            sh """
+                aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO
+            """
 
-                    sh "docker build -f Dockerfile -t ${imageTag} ."
-                    sh "docker push ${imageTag}"
-                }
+            // Ensure Docker builds in repo root where Dockerfile exists
+            dir("${env.WORKSPACE}") {
+                echo "Current directory: $(pwd)"
+                echo "Listing files:"
+                sh "ls -la"
+
+                // Build Docker image
+                sh "docker build -f Dockerfile -t ${imageTag} ."
+
+                // Push Docker image to ECR
+                sh "docker push ${imageTag}"
             }
         }
+    }
+}
+
 
         stage('Install Trivy & Scan Image') {
             steps {
