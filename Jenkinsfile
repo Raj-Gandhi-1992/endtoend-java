@@ -65,22 +65,24 @@ pipeline {
 
         stage('Build & Push Docker Image to ECR') {
             steps {
-                script {
-                    def imageTag = "${ECR_REPO}:${BUILD_NUMBER}"
+                dir("${env.WORKSPACE}") {    // 👈 Ensures we build in the correct folder
+                    script {
+                        def imageTag = "${ECR_REPO}:${BUILD_NUMBER}"
 
-                    // ✅ Debug: confirm Dockerfile is in workspace
-                    sh "echo '--- Checking for Dockerfile ---' && pwd && ls -al"
+                        // ✅ Debug: confirm Dockerfile is in workspace
+                        sh "echo '--- Checking for Dockerfile ---' && pwd && ls -al"
 
-                    // Login to AWS ECR
-                    sh """
-                        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO
-                    """
+                        // Login to AWS ECR
+                        sh """
+                            aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO
+                        """
 
-                    // Build Docker image
-                    sh "docker build -t ${imageTag} ."
+                        // Build Docker image
+                        sh "docker build -t ${imageTag} ."
 
-                    // Push Docker image to ECR
-                    sh "docker push ${imageTag}"
+                        // Push Docker image to ECR
+                        sh "docker push ${imageTag}"
+                    }
                 }
             }
         }
