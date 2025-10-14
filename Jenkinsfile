@@ -90,7 +90,7 @@ pipeline {
                         aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO
                     """
 
-                    sh "docker build -t ${imageTag} ."
+                    sh "docker build -f Dockerfile -t ${imageTag} ."
                     sh "docker push ${imageTag}"
                 }
             }
