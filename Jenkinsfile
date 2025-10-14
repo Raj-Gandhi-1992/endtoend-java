@@ -57,8 +57,8 @@ pipeline {
     post {
         always {
             // Archive the JAR files and test reports regardless of the pipeline result
-            archiveArtifacts artifacts: '*/target/.jar'
-            junit '*/target/surefire-reports/.xml'
+            archiveArtifacts artifacts: '**/target/*.jar'
+            junit '**/target/surefire-reports/*.xml'
         }
 
         success {
