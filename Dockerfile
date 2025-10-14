@@ -1,10 +1,11 @@
-FROM curlimages/curl:8.2.1 AS downloader
-ARG ARTIFACT_URL
+FROM eclipse-temurin:17-jdk AS builder
 WORKDIR /app
-RUN curl -fSL $ARTIFACT_URL -o app.jar
 
 FROM eclipse-temurin:17-jre
 WORKDIR /app
-COPY --from=downloader /app/app.jar app.jar
+
+# Copy the pre-built JAR from Jenkins master workspace to agent
+COPY app.jar app.jar
+
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

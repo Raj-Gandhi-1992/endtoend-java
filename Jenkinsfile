@@ -65,27 +65,20 @@ pipeline {
         }
 
         stage('Build & Push Docker Image to ECR') {
-            agent { label 'pipe' }
-    steps {
-        checkout scm
-        sh 'ls -l'
-        script {
-            def buildNumber = env.BUILD_NUMBER
-            def artifactUrl = "${ARTIFACTORY_URL}/${buildNumber}/spring-petclinic-4.0.0-SNAPSHOT.jar"
-            def imageTag = "${ECR_REPO}:${buildNumber}"
-            
-            // Use the full path to AWS CLI
-            def awsCli = "/usr/local/bin/aws" // replace with the output of `which aws` on your Jenkins node
+           steps {
+            script {
+            def imageTag = "${ECR_REPO}:${BUILD_NUMBER}"
+
+            // Copy JAR from master to agent workspace
+            copyArtifacts(projectName: 'java-spc', selector: lastSuccessful())
 
             // Login to AWS ECR
             sh """
-                ${awsCli} ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO
+                aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO
             """
 
-            // Build Docker image with the artifact from Artifactory
-            sh """
-                docker build --build-arg ARTIFACT_URL=${artifactUrl} -t ${imageTag} .
-            """
+            // Build Docker image on agent
+            sh "docker build -t ${imageTag} ."
 
             // Push Docker image to ECR
             sh "docker push ${imageTag}"
