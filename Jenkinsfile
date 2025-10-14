@@ -92,9 +92,12 @@ pipeline {
 
             // Ensure Docker builds in repo root where Dockerfile exists
             dir("${env.WORKSPACE}") {
-                echo "Current directory: $(pwd)"
-                echo "Listing files:"
-                sh "ls -la"
+                sh '''
+                    echo "--- Current Directory ---"
+                    pwd
+                    echo "--- Listing Files ---"
+                    ls -la
+                '''
 
                 // Build Docker image
                 sh "docker build -f Dockerfile -t ${imageTag} ."
@@ -105,6 +108,7 @@ pipeline {
         }
     }
 }
+
 
 
         stage('Install Trivy & Scan Image') {
