@@ -1,10 +1,10 @@
 pipeline {
-    agent {
-        label 'pipe'
+    agent { 
+        label 'pipe'     // ✅ Ensure the whole pipeline runs on this agent
     }
 
     environment {
-        SERVER_ID = 'Jfrog_spc_java' // Jenkins Artifactory config ID
+        SERVER_ID = 'Jfrog_spc_java' 
         AWS_REGION = 'ap-south-1'
         ECR_REPO = '777014042292.dkr.ecr.ap-south-1.amazonaws.com/java/spc'
         ARTIFACTORY_URL = 'https://trialtud4wx.jfrog.io/artifactory/javaspc-libs-release-local/com/myapp'
@@ -14,13 +14,30 @@ pipeline {
         pollSCM('* * * * *')
     }
 
+    options {
+        disableConcurrentBuilds()
+        skipDefaultCheckout()
+    }
+
     stages {
 
         stage('GIT CHECKOUT') {
             steps {
-                // ✅ Ensures the repo is checked out in the same workspace on the agent
                 checkout([$class: 'GitSCM', branches: [[name: '*/main']], 
                     userRemoteConfigs: [[url: 'https://github.com/spring-projects/spring-petclinic.git']]])
+            }
+        }
+
+        stage('CHECK WORKSPACE') {
+            steps {
+                sh '''
+                    echo "--- Current Workspace ---"
+                    pwd
+                    echo "--- Listing files ---"
+                    ls -la
+                    echo "--- Checking for Dockerfile ---"
+                    find . -maxdepth 2 -type f | grep Dockerfile || echo "Dockerfile not found!"
+                '''
             }
         }
 
@@ -65,24 +82,16 @@ pipeline {
 
         stage('Build & Push Docker Image to ECR') {
             steps {
-                dir("${env.WORKSPACE}") {    // 👈 Ensures we build in the correct folder
-                    script {
-                        def imageTag = "${ECR_REPO}:${BUILD_NUMBER}"
+                script {
+                    def imageTag = "${ECR_REPO}:${BUILD_NUMBER}"
 
-                        // ✅ Debug: confirm Dockerfile is in workspace
-                        sh "echo '--- Checking for Dockerfile ---' && pwd && ls -al"
+                    // ✅ Debugging already added above, so just build here
+                    sh """
+                        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO
+                    """
 
-                        // Login to AWS ECR
-                        sh """
-                            aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO
-                        """
-
-                        // Build Docker image
-                        sh "docker build -t ${imageTag} ."
-
-                        // Push Docker image to ECR
-                        sh "docker push ${imageTag}"
-                    }
+                    sh "docker build -t ${imageTag} ."
+                    sh "docker push ${imageTag}"
                 }
             }
         }
