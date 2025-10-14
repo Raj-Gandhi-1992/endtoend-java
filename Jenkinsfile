@@ -26,33 +26,33 @@ pipeline {
                 }
             }
         }
-        // stage('Upload to JFrog Artifactory') {
-        //     steps {
-        //         script {
-        //             // Create an Artifactory server connection (must match your Jenkins Artifactory config ID)
-        //             def server = Artifactory.server('Jfrog_spc_java')
+        stage('Upload to JFrog Artifactory') {
+            steps {
+                script {
+                    // Create an Artifactory server connection (must match your Jenkins Artifactory config ID)
+                    def server = Artifactory.server('Jfrog_spc_java')
 
-        //             // Create build info object
-        //             def buildInfo = Artifactory.newBuildInfo()
+                    // Create build info object
+                    def buildInfo = Artifactory.newBuildInfo()
 
-        //             // Upload artifacts using modern syntax
-        //             server.upload(
-        //                 spec: '''{
-        //                     "files": [
-        //                         {
-        //                             "pattern": "target/*.jar",
-        //                             "target": "javaspc-libs-release-local/"
-        //                         }
-        //                     ]
-        //                 }''',
-        //                 buildInfo: buildInfo
-        //             )
+                    // Upload artifacts using modern syntax
+                    server.upload(
+                        spec: '''{
+                            "files": [
+                                {
+                                    "pattern": "target/*.jar",
+                                    "target": "javaspc-libs-release-local/com/myapp/${BUILD_NUMBER}/"
+                                }
+                            ]
+                        }''',
+                        buildInfo: buildInfo
+                    )
 
-        //             // Publish the build info to Artifactory
-        //             server.publishBuildInfo(buildInfo)
-        //         }
-        //     }
-        // }
+                    // Publish the build info to Artifactory
+                    server.publishBuildInfo(buildInfo)
+                }
+            }
+        }
     }
     post {
         always {
