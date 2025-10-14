@@ -1,4 +1,9 @@
 pipeline {
+
+    environment {
+        SERVER_ID = 'Jfrog_spc_java'  // same ID you configured in Jenkins
+    }
+    
     agent {
         label 'pipe'
     }
