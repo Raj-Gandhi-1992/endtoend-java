@@ -1,22 +1,28 @@
 pipeline {
-
-    environment {
-        SERVER_ID = 'Jfrog_spc_java'  // same ID you configured in Jenkins
-    }
-    
     agent {
         label 'pipe'
     }
+
+    environment {
+        SERVER_ID = 'Jfrog_spc_java' // Jenkins Artifactory config ID
+        AWS_REGION = 'ap-south-1'
+        ECR_REPO = '777014042292.dkr.ecr.ap-south-1.amazonaws.com/java/spc'
+        ARTIFACTORY_URL = 'https://trialtud4wx.jfrog.io/artifactory/javaspc-libs-release-local/com/myapp'
+    }
+
     triggers {
         pollSCM('* * * * *')
     }
+
     stages {
+
         stage('GIT CHECKOUT') {
             steps {
                 git url: 'https://github.com/spring-projects/spring-petclinic.git', branch: 'main'
             }
         }
-        stage('BUILD') {
+
+        stage('BUILD & SONAR') {
             steps {
                 withCredentials([string(credentialsId: 'sonar_new', variable: 'SONAR_TOKEN')]) {
                     withSonarQubeEnv('SONARQUBE') {
@@ -31,37 +37,59 @@ pipeline {
                 }
             }
         }
+
         stage('Upload to JFrog Artifactory') {
             steps {
                 script {
-                    // Create an Artifactory server connection (must match your Jenkins Artifactory config ID)
-                    def server = Artifactory.server('Jfrog_spc_java')
-
-                    // Create build info object
+                    // Artifactory server connection
+                    def server = Artifactory.server(SERVER_ID)
                     def buildInfo = Artifactory.newBuildInfo()
 
-                    // Upload artifacts using modern syntax
+                    // Upload JAR
                     server.upload(
-                        spec: '''{
+                        spec: """{
                             "files": [
                                 {
                                     "pattern": "target/*.jar",
                                     "target": "javaspc-libs-release-local/com/myapp/${BUILD_NUMBER}/"
                                 }
                             ]
-                        }''',
+                        }""",
                         buildInfo: buildInfo
                     )
 
-                    // Publish the build info to Artifactory
+                    // Publish build info
                     server.publishBuildInfo(buildInfo)
                 }
             }
         }
+
+        stage('Build & Push Docker Image to ECR') {
+            steps {
+                script {
+                    def buildNumber = env.BUILD_NUMBER
+                    def artifactUrl = "${ARTIFACTORY_URL}/${buildNumber}/spring-petclinic-4.0.0-SNAPSHOT.jar"
+                    def imageTag = "${ECR_REPO}:${buildNumber}"
+
+                    // Login to AWS ECR
+                    sh """
+                        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO
+                    """
+
+                    // Build Docker image with artifact from Artifactory
+                    sh """
+                        docker build --build-arg ARTIFACT_URL=${artifactUrl} -t ${imageTag} .
+                    """
+
+                    // Push Docker image to ECR
+                    sh "docker push ${imageTag}"
+                }
+            }
+        }
     }
+
     post {
         always {
-            // Archive the JAR files and test reports regardless of the pipeline result
             archiveArtifacts artifacts: '**/target/*.jar'
             junit '**/target/surefire-reports/*.xml'
         }
