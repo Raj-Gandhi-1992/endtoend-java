@@ -9,6 +9,7 @@ pipeline {
         ECR_REPO = '777014042292.dkr.ecr.ap-south-1.amazonaws.com/java/spc'
         ARTIFACTORY_URL = 'https://trialtud4wx.jfrog.io/artifactory/javaspc-libs-release-local/com/myapp'
         MAVEN_OPTS = '--add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED'
+        MAVEN_OPTS = '--add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED'
     }
 
     triggers {
