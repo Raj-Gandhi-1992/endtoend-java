@@ -14,32 +14,27 @@ pipeline {
         pollSCM('* * * * *')
     }
 
-    options {
-        disableConcurrentBuilds()
-        skipDefaultCheckout()
-    }
-
     stages {
 
         stage('GIT CHECKOUT') {
             steps {
                 checkout([$class: 'GitSCM', branches: [[name: '*/main']], 
-                    userRemoteConfigs: [[url: 'https://github.com/spring-projects/spring-petclinic.git']]])
+                    userRemoteConfigs: [[url: 'https://github.com/Raj-Gandhi-1992/java-spc-pipeline.git']]])
             }
         }
 
-        stage('CHECK WORKSPACE') {
-            steps {
-                sh '''
-                    echo "--- Current Workspace ---"
-                    pwd
-                    echo "--- Listing files ---"
-                    ls -la
-                    echo "--- Checking for Dockerfile ---"
-                    find . -maxdepth 2 -type f | grep Dockerfile || echo "Dockerfile not found!"
-                '''
-            }
-        }
+        // stage('CHECK WORKSPACE') {
+        //     steps {
+        //         sh '''
+        //             echo "--- Current Workspace ---"
+        //             pwd
+        //             echo "--- Listing files ---"
+        //             ls -la
+        //             echo "--- Checking for Dockerfile ---"
+        //             find . -maxdepth 2 -type f | grep Dockerfile || echo "Dockerfile not found!"
+        //         '''
+        //     }
+        // }
 
         stage('BUILD & SONAR') {
             steps {
