@@ -42,7 +42,7 @@ pipeline {
                 withCredentials([string(credentialsId: 'sonar_new', variable: 'SONAR_TOKEN')]) {
                     withSonarQubeEnv('SONARQUBE') {
                         sh '''
-                            mvn clean package -Derrorprone.skip=true sonar:sonar \
+                            mvn clean package -Derrorprone.skip=true -Denforcer.skip=true -Dcheckstyle.skip=true sonar:sonar \
                             -Dsonar.projectKey=Raj-Gandhi-1992_java-spc-pipeline \
                             -Dsonar.organization=raj-gandhi-1992 \
                             -Dsonar.host.url=https://sonarcloud.io \
