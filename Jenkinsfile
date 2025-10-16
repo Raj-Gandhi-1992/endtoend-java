@@ -74,26 +74,28 @@ pipeline {
         }
     }
 
-        // stage('Install Trivy & Scan Image') {
-        //     steps {
-        //         script {
-        //             sh '''
-        //                 if ! command -v trivy &> /dev/null; then
-        //                     curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
-        //                     sudo mv trivy /usr/local/bin/
-        //                 fi
-        //                 trivy --version
-        //                 trivy image --format template --template "@contrib/junit.tpl" -o trivy-report.xml ${ECR_REPO}:${BUILD_NUMBER}
-        //             '''
-        //         }
-        //     }        
-        //     post {
-        //         always {
-        //             junit allowEmptyResults: true, testResults: 'trivy-report.xml'
-        //             archiveArtifacts artifacts: 'trivy-report.xml'
-        //         }
-        //     }
-        // }
+        stage('Install Trivy & Scan Image') {
+    steps {
+        script {
+            sh """
+                docker pull ${ECR_REPO}:${BUILD_NUMBER}
+                if ! command -v trivy &> /dev/null; then
+                    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+                    sudo mv trivy /usr/local/bin/
+                fi
+                REPORT_FILE="trivy-report-${BUILD_NUMBER}.xml"
+                trivy image --format junit -o \${REPORT_FILE} ${ECR_REPO}:${BUILD_NUMBER}
+            """
+        }
+    }
+    post {
+        always {
+            junit allowEmptyResults: true, testResults: "trivy-report-${BUILD_NUMBER}.xml"
+            archiveArtifacts artifacts: "trivy-report-${BUILD_NUMBER}.xml"
+        }
+    }
+}
+
     }
 
     post {
