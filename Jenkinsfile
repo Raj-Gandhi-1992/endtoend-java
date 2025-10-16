@@ -32,6 +32,8 @@ pipeline {
                                 -Dsonar.organization=raj-gandhi-1992 \
                                 -Dsonar.host.url=https://sonarcloud.io \
                                 -Dsonar.login=$SONAR_TOKEN
+                                -Dcheckstyle.excludes=bin/**,target/**,trivy/** \
+                                -Dsonar.exclusions=bin/**,trivy/**
                         '''
                     }
                 }
