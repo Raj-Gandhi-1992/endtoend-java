@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'pipe' } // Ensure the whole pipeline runs on this agent
+    agent { label 'pipe' }
 
     environment {
         SERVER_ID = 'Jfrog_spc_java'
@@ -60,20 +60,20 @@ pipeline {
             }
         }
 
-        // stage('Build & Push Docker Image to ECR') {
-        //     steps {
-        //         script {
-        //             def imageTag = "${ECR_REPO}:${BUILD_NUMBER}"
+        stage('Build & Push Docker Image to ECR') {
+            steps {
+                script {
+                    def imageTag = "${ECR_REPO}:${BUILD_NUMBER}"
 
-        //             // AWS ECR login
-        //             sh "aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO"
+                    // AWS ECR login
+                    sh "aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO"
 
-        //             // Build and push Docker image
-        //             sh "docker build -f Dockerfile -t ${imageTag} ."
-        //             sh "docker push ${imageTag}"
-        //         }
-        //     }
-        // }
+                    // Build and push Docker image
+                    sh "docker build -f Dockerfile -t ${imageTag} ."
+                    sh "docker push ${imageTag}"
+                }
+            }
+        }
 
         // stage('Install Trivy & Scan Image') {
         //     steps {
