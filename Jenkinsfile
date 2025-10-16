@@ -74,27 +74,39 @@ pipeline {
         }
     }
 
-        stage('Install Trivy & Scan Image') {
+   stage('Install Trivy & Scan Image') {
     steps {
         script {
-            sh """
-                docker pull ${ECR_REPO}:${BUILD_NUMBER}
+            // Ensure Trivy is installed locally in workspace
+            sh '''
                 if ! command -v trivy &> /dev/null; then
+                    echo "Trivy not found. Installing..."
                     curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
-                    sudo mv trivy /usr/local/bin/
+                    export PATH=$PATH:$(pwd)/bin
                 fi
-                REPORT_FILE="trivy-report-${BUILD_NUMBER}.xml"
-                trivy image --format junit -o \${REPORT_FILE} ${ECR_REPO}:${BUILD_NUMBER}
+                trivy --version
+            '''
+
+            // Define the image tag
+            def imageTag = "${ECR_REPO}:${BUILD_NUMBER}"
+
+            // Run Trivy scan and output JUnit XML report
+            sh """
+                export PATH=\$PATH:$(pwd)/bin
+                trivy image --format template --template "@contrib/junit.tpl" \
+                    -o trivy-report-${BUILD_NUMBER}.xml ${imageTag}
             """
         }
     }
     post {
         always {
+            // Publish JUnit report and archive artifacts
             junit allowEmptyResults: true, testResults: "trivy-report-${BUILD_NUMBER}.xml"
             archiveArtifacts artifacts: "trivy-report-${BUILD_NUMBER}.xml"
         }
     }
 }
+
 
     }
 
