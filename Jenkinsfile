@@ -91,11 +91,11 @@ pipeline {
             def imageTag = "${ECR_REPO}:${BUILD_NUMBER}"
 
             // Run Trivy scan and output JUnit XML report
-            sh """
-                export PATH=\$PATH:$(pwd)/bin
+            sh '''
+                export PATH=$PATH:$(pwd)/bin
                 trivy image --format template --template "@contrib/junit.tpl" \
                     -o trivy-report-${BUILD_NUMBER}.xml ${imageTag}
-            """
+            '''
         }
     }
     post {
@@ -106,7 +106,6 @@ pipeline {
         }
     }
 }
-
 
     }
 
