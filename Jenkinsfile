@@ -65,7 +65,7 @@ pipeline {
         script {
             def imageTag = "${ECR_REPO}:${BUILD_NUMBER}"
 
-            withAWS(credentials: 'aws_id', region: "${AWS_REGION}") {
+            withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_id']]) {
                 sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REPO}"
                 sh "docker build -f Dockerfile -t ${imageTag} ."
                 sh "docker push ${imageTag}"
