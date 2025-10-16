@@ -6,6 +6,7 @@ pipeline {
         AWS_REGION = 'ap-south-1'
         ECR_REPO = '777014042292.dkr.ecr.ap-south-1.amazonaws.com/java/spc'
         ARTIFACTORY_URL = 'https://trialtud4wx.jfrog.io/artifactory/javaspc-libs-release-local/com/myapp'
+        TRIVY_SKIP = 'false'
         MAVEN_OPTS = "--add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED"
     }
 
@@ -31,9 +32,8 @@ pipeline {
                                 -Dsonar.projectKey=Raj-Gandhi-1992_java-spc-pipeline \
                                 -Dsonar.organization=raj-gandhi-1992 \
                                 -Dsonar.host.url=https://sonarcloud.io \
-                                -Dsonar.login=$SONAR_TOKEN
-                                -Dcheckstyle.excludes=bin/**,target/**,trivy/** \
-                                -Dsonar.exclusions=bin/**,trivy/**
+                                -Dsonar.login=$SONAR_TOKEN \
+                                -Dtrivy.skip=true
                         '''
                     }
                 }
@@ -77,6 +77,9 @@ pipeline {
     }
 
    stage('Install Trivy & Scan Image') {
+    when {
+        expression { env.TRIVY_SKIP == 'false' }
+    }
     steps {
         script {
             // Ensure Trivy is installed locally in workspace
