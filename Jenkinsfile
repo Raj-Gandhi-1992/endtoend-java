@@ -61,19 +61,18 @@ pipeline {
         }
 
         stage('Build & Push Docker Image to ECR') {
-            steps {
-                script {
-                    def imageTag = "${ECR_REPO}:${BUILD_NUMBER}"
+    steps {
+        script {
+            def imageTag = "${ECR_REPO}:${BUILD_NUMBER}"
 
-                    // AWS ECR login
-                    sh "aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO"
-
-                    // Build and push Docker image
-                    sh "docker build -f Dockerfile -t ${imageTag} ."
-                    sh "docker push ${imageTag}"
+            withAWS(credentials: 'aws_id', region: "${AWS_REGION}") {
+                sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REPO}"
+                sh "docker build -f Dockerfile -t ${imageTag} ."
+                sh "docker push ${imageTag}"
                 }
             }
         }
+    }
 
         // stage('Install Trivy & Scan Image') {
         //     steps {
