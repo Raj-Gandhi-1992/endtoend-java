@@ -38,27 +38,27 @@ pipeline {
             }
         }
 
-        // stage('Upload to JFrog Artifactory') {
-        //     steps {
-        //         script {
-        //             def server = Artifactory.server(SERVER_ID)
-        //             def buildInfo = Artifactory.newBuildInfo()
+        stage('Upload to JFrog Artifactory') {
+            steps {
+                script {
+                    def server = Artifactory.server(SERVER_ID)
+                    def buildInfo = Artifactory.newBuildInfo()
 
-        //             server.upload(
-        //                 spec: """{
-        //                     "files": [
-        //                         {
-        //                             "pattern": "target/*.jar",
-        //                             "target": "javaspc-libs-release-local/com/myapp/${BUILD_NUMBER}/"
-        //                         }
-        //                     ]
-        //                 }""",
-        //                 buildInfo: buildInfo
-        //             )
-        //             server.publishBuildInfo(buildInfo)
-        //         }
-        //     }
-        // }
+                    server.upload(
+                        spec: """{
+                            "files": [
+                                {
+                                    "pattern": "target/*.jar",
+                                    "target": "javaspc-libs-release-local/com/myapp/${BUILD_NUMBER}/"
+                                }
+                            ]
+                        }""",
+                        buildInfo: buildInfo
+                    )
+                    server.publishBuildInfo(buildInfo)
+                }
+            }
+        }
 
         // stage('Build & Push Docker Image to ECR') {
         //     steps {
